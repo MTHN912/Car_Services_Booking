@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id          String   @id @default(cuid()) @map("user_id")
+  email       String   @unique @map("email")
+  password    String   @map("password")
+  name        String?  @map("user_name")
+  role        Role     @default(USER) @map("role")
+  gender      String?  @map("gender")       // giới tính
+  address     String?  @map("address")      // địa chỉ
+  phoneNumber String?  @map("phone_number") // số điện thoại
+  bookings    Booking[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("users") // tên bảng trong DB
+}
+
+model Store {
+  id        String   @id @default(cuid()) @map("store_id")
+  name      String   @map("store_name")
+  address   String   @map("address")
+  latitude  Float?   @map("latitude")
+  longitude Float?   @map("longitude")
+  bookings  Booking[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("stores")
+}
+
+model Booking {
+  id          String        @id @default(cuid()) @map("booking_id")
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String        @map("user_id")
+  store       Store         @relation(fields: [storeId], references: [id])
+  storeId     String        @map("store_id")
+  status      BookingStatus @default(PENDING) @map("status")
+  scheduledAt DateTime      @map("scheduled_at")
+  notes       String?       @map("notes")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([scheduledAt])
+  @@map("bookings")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid()) @map("log_id")
+  actorId   String?  @map("actor_id")
+  action    String   @map("action")
+  model     String   @map("model")
+  entityId  String?  @map("entity_id")
+  before    Json?    @map("before")
+  after     Json?    @map("after")
+  ip        String?  @map("ip")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
