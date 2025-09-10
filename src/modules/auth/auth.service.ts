@@ -1,64 +1,48 @@
-// src/modules/auth/auth.service.ts
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import {
+  comparePassword,
+  hashPassword,
+} from '../../common/utils/password.util';
+import { UsersRepository } from '../users/users.repository';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private usersRepo: UsersRepository,
     private jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-    if (existing) {
-      throw new ConflictException('Email already registered');
-    }
+    const existing = await this.usersRepo.findByEmail(dto.email);
+    if (existing) throw new ConflictException('Email đã có được đăng ký!');
 
-    const hashed = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashed,
-        name: dto.name,
-        gender: dto.gender,
-        address: dto.address,
-        phoneNumber: dto.phoneNumber,
-        role: Role.USER,
-      },
+    const hashed = await hashPassword(dto.password);
+    const user = await this.usersRepo.createUser({
+      ...dto,
+      password: hashed,
     });
 
-    return this.signToken(user.id, user.email, user.role);
+    const { password, ...result } = user;
+    return result;
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    const user = await this.usersRepo.findByEmail(dto.email);
+    if (!user) throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const valid = await comparePassword(dto.password, user.password);
+    if (!valid) throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
 
-    const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    return this.signToken(user.id, user.email, user.role);
-  }
-
-  private async signToken(userId: string, email: string, role: Role) {
-    const payload = { sub: userId, email, role };
-    const token = await this.jwtService.signAsync(payload);
-    return { access_token: token };
+    const payload = { sub: user.id, email: user.email };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }

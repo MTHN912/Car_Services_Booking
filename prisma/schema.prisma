@@ -31,15 +31,15 @@ model User {
   password    String   @map("password")
   name        String?  @map("user_name")
   role        Role     @default(USER) @map("role")
-  gender      String?  @map("gender")       // giới tính
-  address     String?  @map("address")      // địa chỉ
-  phoneNumber String?  @map("phone_number") // số điện thoại
+  gender      String?  @map("gender")
+  address     String?  @map("address")
+  phoneNumber String?  @map("phone_number")
   bookings    Booking[]
 
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@map("users") // tên bảng trong DB
+  @@map("users")
 }
 
 model Store {

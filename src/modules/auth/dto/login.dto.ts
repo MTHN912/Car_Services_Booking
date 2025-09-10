@@ -1,10 +1,12 @@
-// src/modules/auth/dto/login.dto.ts
-import { IsEmail, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail()
+  @IsEmail({}, { message: 'Tài khoản hoặc mật khẩu không chính xác' })
+  @IsNotEmpty({ message: 'Tài khoản hoặc mật khẩu không chính xác' })
   email: string;
 
-  @MinLength(6)
+  @IsString()
+  @MinLength(6, { message: 'Tài khoản hoặc mật khẩu không chính xác' })
+  @IsNotEmpty({ message: 'Tài khoản hoặc mật khẩu không chính xác' })
   password: string;
 }
