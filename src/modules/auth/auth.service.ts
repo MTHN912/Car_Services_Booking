@@ -6,10 +6,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { RedisService } from '../../common/redis/redis.service';
 import { comparePassword, hashPassword } from '../../common/utils/password.util';
+import { UserResponseDto } from '../users/dto/user-response.dto';
 import { UsersRepository } from '../users/users.repository';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -22,7 +24,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto): Promise<UserResponseDto> {
     const existing = await this.usersRepo.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email đã được đăng ký!');
 
@@ -32,8 +34,9 @@ export class AuthService {
       password: hashed,
     });
 
-    const { password, ...result } = user;
-    return result;
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async login(dto: LoginDto, res: Response) {
@@ -82,13 +85,9 @@ export class AuthService {
 
       return {
         message: 'Đăng nhập thành công',
-        user: {
-          email: user.email,
-          name: user.name,
-          gender: user.gender,
-          address: user.address,
-          phoneNumber: user.phoneNumber,
-        },
+        user: plainToInstance(UserResponseDto, user, {
+          excludeExtraneousValues: true,
+        }),
       };
   }
 
@@ -128,7 +127,8 @@ export class AuthService {
   return { access_token: newAccessToken };
 }
 
-  async logout(userId: string, res: Response) {
+  async logout(userId: string, sessionId: string, res: Response) {
+    await this.redisService.del(`session:${sessionId}`);
     await this.redisService.del(`refresh:${userId}`);
     res.clearCookie('access_token');
     res.clearCookie('session_id');

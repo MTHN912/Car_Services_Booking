@@ -20,4 +20,11 @@ export class UsersController {
   getUserById(@Param('id') id: string) {
     return this.usersService.getUserById(id);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get()
+  getAllUsers() {
+    return this.usersService.getAllUsers();
+  }
 }

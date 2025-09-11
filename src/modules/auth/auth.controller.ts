@@ -31,6 +31,10 @@ export class AuthController {
   @Post('logout')
   async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     const userId = req.user?.userId;
-    return this.authService.logout(userId, res);
+      const sessionId = req.cookies['session_id'];
+    if (!sessionId) {
+      throw new UnauthorizedException('Không tìm thấy sessionId');
+    }
+    return this.authService.logout(userId, sessionId, res);
   }
 }
