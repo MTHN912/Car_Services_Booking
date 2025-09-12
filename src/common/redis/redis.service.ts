@@ -5,6 +5,15 @@ import Redis from 'ioredis';
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
 
+  private readonly TTL = {
+    USER: 60 * 10,
+    USERS: 60 * 5,
+    // BOOKING: 60 * 30,
+    // STORE: 60 * 60,
+    SESSION: 60 * 60 * 24 * 7,
+    REFRESH_TOKEN: 60 * 60 * 24 * 7,
+  };
+
   onModuleInit() {
     this.client = new Redis({
       host: process.env.REDIS_HOST || '127.0.0.1',
@@ -31,5 +40,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async del(key: string) {
     return this.client.del(key);
+  }
+
+  async setWithType(key: string, value: string, type: keyof typeof this.TTL) {
+    await this.client.set(key, value, 'EX', this.TTL[type]);
+  }
+
+  async flushPrefix(prefix: string): Promise<void> {
+    const keys = await this.client.keys(`${prefix}:*`);
+    if (keys.length > 0) {
+      await this.client.del(keys);
+    }
   }
 }

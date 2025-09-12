@@ -6,19 +6,32 @@ export class UsersRepository {
   constructor(private prisma: PrismaService) {}
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({
+      where: { email }
+    });
   }
 
   async createUser(data: any) {
-    return this.prisma.user.create({ data });
+    return this.prisma.user.create({
+      data
+    });
   }
   
   async findById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({
+      where: { id }
+    });
   }
 
   async findAll() {
     return this.prisma.user.findMany();
   }
+
+  async updateUser(id: string, data: any) {
+  return this.prisma.user.update({
+    where: { id },
+    data,
+  });
+}
 
 }

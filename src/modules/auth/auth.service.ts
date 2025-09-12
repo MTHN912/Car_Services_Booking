@@ -60,14 +60,13 @@ export class AuthService {
       expiresIn: this.configService.get<string>('jwt.refreshToken.expiresIn'),
     });
 
-    const ttl = 60 * 60 * 24 * 7;
-    await this.redisService.set(`refresh:${user.id}`, refreshToken, ttl);
+    await this.redisService.setWithType(`refresh:${user.id}`, refreshToken, 'REFRESH_TOKEN');
 
     // Tạo sessionId ngẫu nhiên
     const sessionId = uuidv4();
 
     // Lưu mapping sessionId -> refreshToken vào Redis
-    await this.redisService.set(`session:${sessionId}`, refreshToken, ttl);
+    await this.redisService.setWithType(`session:${sessionId}`, refreshToken, 'SESSION');
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -80,7 +79,7 @@ export class AuthService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: ttl * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
       return {
@@ -132,6 +131,7 @@ export class AuthService {
     await this.redisService.del(`refresh:${userId}`);
     res.clearCookie('access_token');
     res.clearCookie('session_id');
+    await this.redisService.del(`user:${userId}`)
     return { message: 'Đăng xuất thành công' };
   }
 
