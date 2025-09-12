@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Learn more at https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -26,34 +23,54 @@ enum BookingStatus {
 }
 
 model User {
-  id          String   @id @default(cuid()) @map("user_id")
-  email       String   @unique @map("email")
-  password    String   @map("password")
-  name        String?  @map("user_name")
-  role        Role     @default(USER) @map("role")
-  gender      String?  @map("gender")
-  address     String?  @map("address")
-  phoneNumber String?  @map("phone_number")
+  id          String    @id @default(cuid()) @map("user_id")
+  email       String    @unique @map("email")
+  password    String    @map("password")
+  name        String?   @map("user_name")
+  role        Role      @default(USER) @map("role")
+  gender      String?   @map("gender")
+  address     String?   @map("address")
+  phoneNumber String?   @map("phone_number")
+
   bookings    Booking[]
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("users")
 }
 
 model Store {
-  id        String   @id @default(cuid()) @map("store_id")
-  name      String   @map("store_name")
-  address   String   @map("address")
-  latitude  Float?   @map("latitude")
-  longitude Float?   @map("longitude")
-  bookings  Booking[]
+  id        String     @id @default(cuid()) @map("store_id")
+  name      String     @map("store_name")
+  address   String     @map("address")
+  latitude  Float?     @map("latitude")
+  longitude Float?     @map("longitude")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  bookings  Booking[]
+  services  Service[]
+
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   @@map("stores")
+}
+
+model Service {
+  id          String    @id @default(cuid()) @map("service_id")
+  store       Store     @relation(fields: [storeId], references: [id])
+  storeId     String    @map("store_id")
+  name        String    @map("service_name")
+  description String?   @map("description")
+  price       Float?    @map("price")
+  duration    Int?      @map("duration")
+
+  bookings    Booking[]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("services")
 }
 
 model Booking {
@@ -62,12 +79,15 @@ model Booking {
   userId      String        @map("user_id")
   store       Store         @relation(fields: [storeId], references: [id])
   storeId     String        @map("store_id")
+  service     Service?      @relation(fields: [serviceId], references: [id])
+  serviceId   String?       @map("service_id")
+
   status      BookingStatus @default(PENDING) @map("status")
   scheduledAt DateTime      @map("scheduled_at")
   notes       String?       @map("notes")
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([storeId])
@@ -89,4 +109,3 @@ model AuditLog {
 
   @@map("audit_logs")
 }
-
