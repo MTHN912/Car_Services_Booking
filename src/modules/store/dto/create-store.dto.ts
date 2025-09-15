@@ -1,4 +1,3 @@
-// create-store.dto.ts
 import { IsString, IsNumber } from 'class-validator';
 
 export class CreateStoreDto {
@@ -8,9 +7,18 @@ export class CreateStoreDto {
   @IsString()
   address: string;
 
-  @IsNumber()
-  latitude: number;   // bắt buộc
+  @IsString()
+  street: string;
+
+  @IsString()
+  ward: string;
+
+  @IsString()
+  city: string;
 
   @IsNumber()
-  longitude: number;  // bắt buộc
+  latitude: number;
+
+  @IsNumber()
+  longitude: number;
 }

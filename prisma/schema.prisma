@@ -44,6 +44,10 @@ model Store {
   id        String     @id @default(cuid()) @map("store_id")
   name      String     @map("store_name")
   address   String     @map("address")
+  street    String?    @map("street")
+  ward      String?    @map("ward")
+  city      String?    @map("city")
+
   latitude  Float?     @map("latitude")
   longitude Float?     @map("longitude")
 

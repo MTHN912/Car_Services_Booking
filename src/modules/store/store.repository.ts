@@ -1,4 +1,3 @@
-// src/stores/store.repository.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
@@ -6,7 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 export class StoreRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: { name: string; address: string; latitude: number; longitude: number }) {
+  async create(data: { name: string; address: string; latitude: number; longitude: number; street: string; ward: string; city: string;}) {
     return this.prisma.store.create({
       data,
     });
@@ -41,5 +40,17 @@ export class StoreRepository {
         ) < ${radius}
         ORDER BY "distance" ASC;
     `);
+    }
+
+    async findByCity(city: string) {
+        return this.prisma.store.findMany({
+            where: { city: { equals: city, mode: 'insensitive' } },
+        });
+    }
+
+    async findAll() {
+        return this.prisma.store.findMany({
+            orderBy: { createdAt: 'desc' },
+        });
     }
 }

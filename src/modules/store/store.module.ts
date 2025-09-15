@@ -1,4 +1,3 @@
-// src/stores/store.module.ts
 import { Module } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { StoreController } from './store.controller';

@@ -1,4 +1,3 @@
-// src/stores/dto/nearby-store.dto.ts
 import { Expose, Exclude } from 'class-transformer';
 
 export class NearbyStoreDto {
@@ -18,5 +17,5 @@ export class NearbyStoreDto {
   longitude: number;
 
   @Expose()
-  distance: number; // km
+  distance: number;
 }
