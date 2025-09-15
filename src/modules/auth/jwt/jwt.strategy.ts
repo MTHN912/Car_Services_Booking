@@ -10,7 +10,6 @@ function extractJWTFromCookie(req: Request): string | null {
   }
   return null;
 }
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {

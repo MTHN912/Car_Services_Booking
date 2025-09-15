@@ -1,9 +1,10 @@
 import { Body, Controller, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.service/auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SessionId } from './decorator/session-id.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -20,21 +21,13 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const sessionId = req.cookies['session_id'];
-    if (!sessionId) throw new UnauthorizedException('Không tìm thấy sessionId');
-
+  async refresh(@SessionId() sessionId: string, @Res({ passthrough: true }) res: Response) {
     return this.authService.refresh(sessionId, res);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const userId = req.user?.userId;
-      const sessionId = req.cookies['session_id'];
-    if (!sessionId) {
-      throw new UnauthorizedException('Không tìm thấy sessionId');
-    }
-    return this.authService.logout(userId, sessionId, res);
+  async logout(@Req() req: any, @SessionId() sessionId: string, @Res({ passthrough: true }) res: Response) {
+    return this.authService.logout(req.user?.userId, sessionId, res);
   }
 }
