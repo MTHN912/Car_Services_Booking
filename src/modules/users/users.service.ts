@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { RedisService } from '../../common/redis/redis.service';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UsersRepository } from './users.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { BusinessException } from 'src/common/exception-filter/bussines.exception';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +23,7 @@ export class UsersService {
 
     const user = await this.usersRepository.findById(id);
     if (!user) {
-      throw new NotFoundException(`Không có người dùng nào có id: ${id}`);
+      throw new BusinessException(`Không có người dùng nào có id: ${id}`, HttpStatus.NOT_FOUND);
     }
 
     const result = plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
@@ -58,7 +59,7 @@ export class UsersService {
     const updatedUser = await this.usersRepository.updateUser(id, dto);
 
     if (!updatedUser) {
-      throw new NotFoundException(`Không tìm thấy user với id: ${id}`);
+      throw new BusinessException(`Không tìm thấy user với id: ${id}`, HttpStatus.NOT_FOUND);
     }
 
     const result = plainToInstance(UserResponseDto, updatedUser, {

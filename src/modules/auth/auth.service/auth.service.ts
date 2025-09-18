@@ -1,15 +1,15 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Injectable} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
+import { BusinessException } from 'src/common/exception-filter/bussines.exception';
 import { v4 as uuidv4 } from 'uuid';
 import { comparePassword, hashPassword } from '../../../common/utils/password.util';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { UsersRepository } from '../../users/users.repository';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
-import { TokenService } from './token.service';
 import { SessionService } from './session.service';
-
+import { TokenService } from './token.service';
 @Injectable()
 export class AuthService {
   constructor(
@@ -20,7 +20,9 @@ export class AuthService {
 
   async register(dto: RegisterDto): Promise<UserResponseDto> {
     const existing = await this.usersRepo.findByEmail(dto.email);
-    if (existing) throw new ConflictException('Email đã được đăng ký!');
+    if (existing)
+    //  throw new ConflictException('Email đã được đăng ký!');
+      throw new BusinessException('Email đã được đăng ký!', HttpStatus.CONFLICT, 'USER_EMAIL_EXISTS');
 
     const hashed = await hashPassword(dto.password);
     const user = await this.usersRepo.createUser({
@@ -34,7 +36,7 @@ export class AuthService {
   async login(dto: LoginDto, res: Response) {
     const user = await this.usersRepo.findByEmail(dto.email);
     if (!user || !(await comparePassword(dto.password, user.password))) {
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
+      throw new BusinessException('Tài khoản hoặc mật khẩu không chính xác', HttpStatus.UNAUTHORIZED, 'INVALID_PASSWORD');
     }
 
     const payload = { sub: user.id, email: user.email, role: user.role };
@@ -57,17 +59,17 @@ export class AuthService {
 
   async refresh(sessionId: string, res: Response) {
     const refreshToken = await this.sessionService.getSession(sessionId);
-    if (!refreshToken) throw new ForbiddenException('Session không hợp lệ hoặc đã hết hạn');
+    if (!refreshToken) throw new BusinessException('Session không hợp lệ hoặc đã hết hạn', HttpStatus.FORBIDDEN);
 
     let payload: any;
     try {
       payload = this.tokenService.verifyRefreshToken(refreshToken);
     } catch {
-      throw new ForbiddenException('Refresh token không hợp lệ hoặc đã hết hạn');
+      throw new BusinessException('Refresh token không hợp lệ hoặc đã hết hạn', HttpStatus.FORBIDDEN);
     }
 
     const user = await this.usersRepo.findById(payload.sub);
-    if (!user) throw new UnauthorizedException('User không tồn tại');
+    if (!user) throw new BusinessException('User không tồn tại', HttpStatus.UNAUTHORIZED);
 
     const newAccessToken = this.tokenService.createAccessToken({
       sub: user.id,

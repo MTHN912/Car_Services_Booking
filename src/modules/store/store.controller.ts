@@ -3,9 +3,9 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { GetNearbyDto } from './dto/get-nearby.dto';
 import { StoreService } from './store.service';
 
-import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
-import { Roles } from '../users/role/roles.decorator';
-import { RolesGuard } from '../users/role/roles.guard';
+import { Roles } from '../../common/decorator/roles.decorator';
+import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { RolesGuard } from '../../common/guard/roles.guard';
 
 @Controller('stores')
 export class StoreController {
