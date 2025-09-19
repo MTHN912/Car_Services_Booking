@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, HttpStatus, Injectable } from '@nestjs/c
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorator/roles.decorator';
 import { BusinessException } from '../exception-filter/bussines.exception';
+import { AuthException } from '../exception-filter/auth.exception';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -17,7 +18,7 @@ export class RolesGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest();
 
     if (!requiredRoles.includes(user.role)) {
-      throw new BusinessException(`Bạn không có quyền truy cập tài nguyên này`, HttpStatus.FORBIDDEN);
+      throw new AuthException(`Bạn không có quyền truy cập tài nguyên này`, HttpStatus.FORBIDDEN, 'FORBIDDEN_ERROR');
     }
 
     return true;

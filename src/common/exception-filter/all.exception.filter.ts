@@ -1,5 +1,20 @@
-import { ArgumentsHost,Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
+import {ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { BusinessException } from './bussines.exception';
+
+type ErrorType =
+  | 'BUSINESS_ERROR'
+  | 'USER_ERROR'
+  | 'AUTH_ERROR'
+  | 'SYSTEM_ERROR'
+  | 'VALIDATION_ERROR';
+
+interface ErrorPayload {
+  status: number;
+  message: string | string[];
+  errorType: ErrorType;
+  errorCode?: string;
+}
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -8,27 +23,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
-    let errorType: 'BUSINESS_ERROR' | 'SYSTEM_ERROR' = 'SYSTEM_ERROR';
-    let errorCode: string | undefined = undefined;
-
-    // Nếu là HttpException (bao gồm cả BusinessException)
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const res = exception.getResponse();
-
-      if (typeof res === 'string') {
-        message = res;
-      } else if (typeof res === 'object') {
-        const r:any = res;
-        message = (res as any).message || message;
-        errorCode = r.errorCode || undefined;
-      }
-
-      // Quy ước: 4xx là BUSINESS_ERROR, còn lại là SYSTEM_ERROR
-      errorType = status >= 400 && status < 500 ? 'BUSINESS_ERROR' : 'SYSTEM_ERROR';
-    }
+    const { status, message, errorType, errorCode } =
+      this.buildErrorPayload(exception);
 
     response.status(status).json({
       success: false,
@@ -39,5 +35,41 @@ export class AllExceptionsFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
     });
+  }
+
+  private buildErrorPayload(exception: unknown): ErrorPayload {
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message: string | string[] = 'Internal server error';
+    let errorType: ErrorType = 'SYSTEM_ERROR';
+    let errorCode: string | undefined;
+
+    if (exception instanceof BusinessException) {
+      const res = exception.getResponse() as Record<string, any>;
+      status = exception.getStatus();
+      message = res.message || message;
+      errorCode = res.errorCode;
+      errorType = (res.error as ErrorType) || 'BUSINESS_ERROR';
+    } else if (exception instanceof HttpException) {
+      const res = exception.getResponse();
+      status = exception.getStatus();
+
+      if (typeof res === 'string') {
+        message = res;
+      } else if (typeof res === 'object' && res !== null) {
+        const r = res as Record<string, any>;
+        message = r.message || message;
+        errorCode = r.errorCode;
+
+        if (status === HttpStatus.BAD_REQUEST && Array.isArray(r.message)) {
+          errorType = 'VALIDATION_ERROR';
+          message = r.message;
+          errorCode = 'VALIDATION_FAILED';
+        }
+      }
+    } else if (exception instanceof Error) {
+      message = exception.message || message;
+    }
+
+    return { status, message, errorType, errorCode };
   }
 }
